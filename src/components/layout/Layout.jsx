@@ -1,0 +1,16 @@
+import { Outlet } from "react-router-dom";
+import Header from "./Header";
+import Footer from "./Footer";
+
+export default function Layout(){
+    return (
+        <div className="flex min-h-screen flex-col bg-slate-50">
+            <Header />
+            <main className="flex-1">
+                {/* Outlet renders whichever child route matched the current URL */}
+                <Outlet />
+            </main>
+            <Footer />
+        </div>
+    )
+}
