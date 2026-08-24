@@ -10,7 +10,8 @@ import Checkout from "../pages/Checkout";
 export default function AppRoutes() {
     return(
         <Routes>
-            <Route element={<Layout />}>
+            {/* Layout is the layer of Header and Footer that would be wrapped around the content  */}
+            <Route element={<Layout />}>     
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
