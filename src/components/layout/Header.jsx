@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import IconButton from "@mui/material/IconButton";
 import Drawer from "@mui/material/Drawer";
-// import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-// import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-// import MenuIcon from "@mui/icons-material/Menu";
-// import CloseIcon from "@mui/icons-material/Close";
+import Badge from "@mui/material/Badge";
+import { LightMode as LightModeIcon, DarkMode as DarkModeIcon } from "@mui/icons-material";
+import { useThemeMode } from "../../context/ThemeContext";
 import {
   ShoppingCartOutlined as ShoppingCartOutlinedIcon,
   FavoriteBorder as FavoriteBorderIcon,
@@ -15,57 +15,79 @@ import {
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const wishlistCount = useSelector((state) => state.wishlist.items.length);
+  const cartCount = useSelector((state) => state.cart.items.length);
+  const { mode, toggleMode } = useThemeMode();
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        {/* Hamburger button - mobile only */}
-        <IconButton
-          className="sm:hidden"
-          aria-label="open menu"
-          onClick={() => setMenuOpen(true)}
-        >
-          <MenuIcon />
-        </IconButton>
+    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
+      <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center gap-2">
+          <div className="sm:hidden">
+            <IconButton aria-label="open menu" onClick={() => setMenuOpen(true)}>
+              <MenuIcon />
+            </IconButton>
+          </div>
 
-        <Link to="/" className="text-xl font-bold text-slate-900">
-          ShopEase
-        </Link>
+          <Link to="/" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+            ShopEase
+          </Link>
+        </div>
 
-        {/* Layout is the layer of Header and Footer that would be wrapped around the content */}
-        <nav className="hidden gap-6 text-sm font-medium text-slate-600 sm:flex">
-          <Link to="/products" className="hover:text-indigo-600">Products</Link>
+        <nav className="hidden gap-8 text-sm font-medium text-slate-600 sm:flex">
+          <Link to="/products" className="transition-colors hover:text-indigo-600">
+            Products
+          </Link>
         </nav>
 
         <div className="flex items-center gap-1">
-          <IconButton component={Link} to="/wishlist" aria-label="wishlist">
-            <FavoriteBorderIcon />
+          <IconButton onClick={toggleMode} aria-label="toggle theme">
+            {mode === "light" ? <DarkModeIcon /> : <LightModeIcon />}
           </IconButton>
+
+          <IconButton component={Link} to="/wishlist" aria-label="wishlist">
+            <Badge badgeContent={wishlistCount} color="error">
+              <FavoriteBorderIcon />
+            </Badge>
+          </IconButton>
+          
           <IconButton component={Link} to="/cart" aria-label="cart">
-            <ShoppingCartOutlinedIcon />
+            <Badge badgeContent={cartCount} color="error">
+              <ShoppingCartOutlinedIcon />
+            </Badge>
           </IconButton>
         </div>
       </div>
 
-      {/* Mobile slide-out drawer */}
       <Drawer anchor="left" open={menuOpen} onClose={() => setMenuOpen(false)}>
         <div className="flex w-64 flex-col p-4">
-          <IconButton
-            aria-label="close menu"
-            className="self-end"
-            onClick={() => setMenuOpen(false)}
-          >
-            <CloseIcon />
-          </IconButton>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-slate-900">ShopEase</span>
+            <IconButton aria-label="close menu" onClick={() => setMenuOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </div>
 
-          <nav className="mt-4 flex flex-col gap-4 text-slate-700">
-            <Link to="/products" onClick={() => setMenuOpen(false)}>
+          <nav className="mt-6 flex flex-col gap-1 text-slate-700">
+            <Link
+              to="/products"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-md px-3 py-2 transition-colors hover:bg-slate-100"
+            >
               Products
             </Link>
-            <Link to="/cart" onClick={() => setMenuOpen(false)}>
+            <Link
+              to="/cart"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-md px-3 py-2 transition-colors hover:bg-slate-100"
+            >
               Cart
             </Link>
-            <Link to="/wishlist" onClick={() => setMenuOpen(false)}>
+            <Link
+              to="/wishlist"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-md px-3 py-2 transition-colors hover:bg-slate-100"
+            >
               Wishlist
             </Link>
           </nav>

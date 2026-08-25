@@ -4,7 +4,7 @@ import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import DeleteOutlineIcon from "@mui/icons-material/Delete";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import {
   incrementQuantity,
   decrementQuantity,
@@ -22,14 +22,15 @@ export default function Cart() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">Your cart is empty</h1>
-        <p className="mt-2 text-slate-600">Looks like you haven't added anything yet.</p>
+      <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Your cart is empty</h1>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">Looks like you haven't added anything yet.</p>
         <Button
           component={Link}
           to="/products"
           variant="contained"
-          className="mt-6"
+          disableElevation
+          sx={{ mt: 4 }}
         >
           Browse products
         </Button>
@@ -39,13 +40,13 @@ export default function Cart() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">Your cart</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Your cart</h1>
 
       <div className="mt-6 flex flex-col gap-4">
         {cartItems.map((item) => (
           <div
             key={item.id}
-            className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4"
+            className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
           >
             <img
               src={item.image}
@@ -54,8 +55,8 @@ export default function Cart() {
             />
 
             <div className="flex-1">
-              <p className="font-semibold text-slate-900">{item.name}</p>
-              <p className="text-sm text-slate-500">${item.price.toFixed(2)}</p>
+              <p className="font-semibold text-slate-900 dark:text-white">{item.name}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">${item.price.toFixed(2)}</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -66,7 +67,7 @@ export default function Cart() {
               >
                 <RemoveIcon fontSize="small" />
               </IconButton>
-              <span className="w-6 text-center">{item.quantity}</span>
+              <span className="w-6 text-center text-slate-900 dark:text-white">{item.quantity}</span>
               <IconButton
                 size="small"
                 onClick={() => dispatch(incrementQuantity(item.id))}
@@ -76,7 +77,7 @@ export default function Cart() {
               </IconButton>
             </div>
 
-            <p className="w-20 text-right font-semibold text-slate-900">
+            <p className="w-20 text-right font-semibold text-slate-900 dark:text-white">
               ${(item.price * item.quantity).toFixed(2)}
             </p>
 
@@ -84,17 +85,17 @@ export default function Cart() {
               onClick={() => dispatch(removeFromCart(item.id))}
               aria-label="remove item"
             >
-              <DeleteOutlineIcon />
+              <DeleteOutlinedIcon />
             </IconButton>
           </div>
         ))}
       </div>
 
-      <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-6">
-        <p className="text-lg font-semibold text-slate-900">
+      <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-6 dark:border-slate-700">
+        <p className="text-lg font-semibold text-slate-900 dark:text-white">
           Total: ${total.toFixed(2)}
         </p>
-        <Button component={Link} to="/checkout" variant="contained" size="large">
+        <Button component={Link} to="/checkout" variant="contained" disableElevation size="large">
           Checkout
         </Button>
       </div>
