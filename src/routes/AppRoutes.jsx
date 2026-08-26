@@ -6,6 +6,7 @@ import ProductDetail from "../pages/ProductDetail";
 import Cart from "../pages/Cart";
 import Wishlist from "../pages/Wishlist";
 import Checkout from "../pages/Checkout";
+import OrderSuccess from "../pages/OrderSuccess";
 
 export default function AppRoutes() {
     return(
@@ -18,6 +19,7 @@ export default function AppRoutes() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/order-success" element={<OrderSuccess />} />
             </Route>
         </Routes>
     )
