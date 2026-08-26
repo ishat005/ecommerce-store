@@ -21,16 +21,27 @@ import {
 } from "../features/wishlist/wishlistSlice";
 
 export default function Products() {
-  const products = useSelector((state) => state.products.items);
-  const wishlistItems = useSelector((state) => state.wishlist.items);
+  const products = useSelector(
+    (state) => state.products.items
+  );
+
+  const wishlistItems = useSelector(
+    (state) => state.wishlist.items
+  );
 
   const dispatch = useDispatch();
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const selectedCategory = searchParams.get("category");
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const selectedCategory =
+    searchParams.get("category");
 
   const filteredProducts = selectedCategory
-    ? products.filter((product) => product.category === selectedCategory)
+    ? products.filter(
+        (product) =>
+          product.category === selectedCategory
+      )
     : products;
 
   const isWishlisted = (id) =>
@@ -68,117 +79,125 @@ export default function Products() {
 
       {/* Products */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredProducts.map((product) => (
-          <Card
-            key={product.id}
-            className="flex flex-col overflow-hidden"
-          >
-            {/* Image */}
-            <div className="relative">
-              <IconButton
-                aria-label="toggle wishlist"
-                onClick={() => toggleWishlist(product)}
-                sx={{
-                  position: "absolute",
-                  top: 8,
-                  right: 8,
-                  zIndex: 10,
-                  bgcolor: "rgba(255,255,255,0.9)",
-                  color: "#334155",
-                  "&:hover": {
-                    bgcolor: "white",
-                  },
-                }}
-              >
-                {isWishlisted(product.id) ? (
-                  <FavoriteIcon
-                    className="text-red-500"
-                    fontSize="small"
+        {filteredProducts.map((product) => {
+          const outOfStock = product.stock === 0;
+
+          const lowStock =
+            product.stock > 0 &&
+            product.stock <= 3;
+
+          return (
+            <Card
+              key={product.id}
+              className="flex flex-col overflow-hidden"
+            >
+              {/* Image */}
+              <div className="relative">
+                <IconButton
+                  aria-label="toggle wishlist"
+                  onClick={() =>
+                    toggleWishlist(product)
+                  }
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    zIndex: 10,
+                    bgcolor:
+                      "rgba(255,255,255,0.9)",
+                    color: "#334155",
+                    "&:hover": {
+                      bgcolor: "white",
+                    },
+                  }}
+                >
+                  {isWishlisted(product.id) ? (
+                    <FavoriteIcon
+                      className="text-red-500"
+                      fontSize="small"
+                    />
+                  ) : (
+                    <FavoriteBorderIcon fontSize="small" />
+                  )}
+                </IconButton>
+
+                <Link
+                  to={`/products/${product.id}`}
+                >
+                  <CardMedia
+                    component="img"
+                    image={product.image}
+                    alt={product.name}
+                    className="aspect-square w-full object-cover"
                   />
-                ) : (
-                  <FavoriteBorderIcon fontSize="small" />
-                )}
-              </IconButton>
+                </Link>
+              </div>
 
-              <Link to={`/products/${product.id}`}>
-                <CardMedia
-                  component="img"
-                  image={product.image}
-                  alt={product.name}
-                  className="aspect-square w-full object-cover"
-                />
-              </Link>
-            </div>
-
-            {/* Content */}
-            <CardContent className="flex-1">
-              <Typography
-                variant="caption"
-                className="font-medium uppercase tracking-wide text-indigo-600 dark:text-indigo-400"
-              >
-                {product.category}
-              </Typography>
-
-              <Link
-                to={`/products/${product.id}`}
-                className="block hover:text-indigo-600"
-              >
+              {/* Content */}
+              <CardContent className="flex-1">
                 <Typography
-                  variant="subtitle1"
-                  className="mt-1"
+                  variant="caption"
+                  className="font-medium uppercase tracking-wide text-indigo-600 dark:text-indigo-400"
                 >
-                  {product.name}
+                  {product.category}
                 </Typography>
-              </Link>
 
-              <Typography
-                variant="h6"
-                className="mt-2 text-slate-900 dark:text-white"
-              >
-                ${product.price.toFixed(2)}
-              </Typography>
+                <Link
+                  to={`/products/${product.id}`}
+                  className="block hover:text-indigo-600"
+                >
+                  <Typography
+                    variant="subtitle1"
+                    className="mt-1"
+                  >
+                    {product.name}
+                  </Typography>
+                </Link>
 
-              {/* Stock Status */}
-              {product.stock === 0 ? (
                 <Typography
-                  variant="body2"
-                  className="mt-2 font-medium text-red-600"
+                  variant="h6"
+                  className="mt-2 text-slate-900 dark:text-white"
                 >
-                  Out of stock
+                  ${product.price.toFixed(2)}
                 </Typography>
-              ) : product.stock <= 3 ? (
-                <Typography
-                  variant="body2"
-                  className="mt-2 font-medium text-orange-600"
-                >
-                  Only {product.stock} left!
-                </Typography>
-              ) : (
-                <Typography
-                  variant="body2"
-                  className="mt-2 font-medium text-green-600"
-                >
-                  In stock
-                </Typography>
-              )}
-            </CardContent>
 
-            {/* Actions */}
-            <CardActions className="px-4 pb-4">
-              <Button
-                fullWidth
-                variant="contained"
-                disableElevation
-                disabled={product.stock === 0}
-                onClick={() => dispatch(addToCart(product))}
-              >
-                {product.stock === 0
-                  ? "Out of stock"
-                  : "Add to cart"}
-              </Button>
-            </CardActions>
-          </Card>
-        ))}
+                {/* Stock */}
+                <div className="mt-3">
+                  {outOfStock ? (
+                    <span className="text-sm font-semibold text-red-600">
+                      Out of stock
+                    </span>
+                  ) : lowStock ? (
+                    <span className="text-sm font-semibold text-orange-600">
+                      Only {product.stock} left in stock
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium text-green-600">
+                      {product.stock} in stock
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+
+              {/* Actions */}
+              <CardActions className="px-4 pb-4">
+                <Button
+                  fullWidth
+                  variant="contained"
+                  disableElevation
+                  disabled={outOfStock}
+                  onClick={() =>
+                    dispatch(addToCart(product))
+                  }
+                >
+                  {outOfStock
+                    ? "Out of stock"
+                    : "Add to cart"}
+                </Button>
+              </CardActions>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

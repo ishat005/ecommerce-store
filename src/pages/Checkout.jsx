@@ -11,9 +11,16 @@ import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 
 import { clearCart } from "../features/cart/cartSlice";
+import { decreaseStock } from "../features/products/productsSlice";
 
 export default function Checkout() {
-  const cartItems = useSelector((state) => state.cart.items);
+  const cartItems = useSelector(
+    (state) => state.cart.items
+  );
+
+  const products = useSelector(
+    (state) => state.products.items
+  );
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -34,9 +41,12 @@ export default function Checkout() {
 
   const [errors, setErrors] = useState({});
 
+  const [stockError, setStockError] = useState("");
+
   const subtotal = useMemo(() => {
     return cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
+      (sum, item) =>
+        sum + item.price * item.quantity,
       0
     );
   }, [cartItems]);
@@ -64,30 +74,39 @@ export default function Checkout() {
     const newErrors = {};
 
     if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
+      newErrors.firstName =
+        "First name is required";
     }
 
     if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
+      newErrors.lastName =
+        "Last name is required";
     }
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        formData.email
+      )
     ) {
-      newErrors.email = "Enter a valid email address";
+      newErrors.email =
+        "Enter a valid email address";
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^[0-9]{10}$/.test(formData.phone)) {
+      newErrors.phone =
+        "Phone number is required";
+    } else if (
+      !/^[0-9]{10}$/.test(formData.phone)
+    ) {
       newErrors.phone =
         "Enter a valid 10-digit phone number";
     }
 
     if (!formData.address.trim()) {
-      newErrors.address = "Address is required";
+      newErrors.address =
+        "Address is required";
     }
 
     if (!formData.city.trim()) {
@@ -95,12 +114,16 @@ export default function Checkout() {
     }
 
     if (!formData.state.trim()) {
-      newErrors.state = "State is required";
+      newErrors.state =
+        "State is required";
     }
 
     if (!formData.pinCode.trim()) {
-      newErrors.pinCode = "PIN code is required";
-    } else if (!/^[0-9]{6}$/.test(formData.pinCode)) {
+      newErrors.pinCode =
+        "PIN code is required";
+    } else if (
+      !/^[0-9]{6}$/.test(formData.pinCode)
+    ) {
       newErrors.pinCode =
         "Enter a valid 6-digit PIN code";
     }
@@ -110,10 +133,63 @@ export default function Checkout() {
     return Object.keys(newErrors).length === 0;
   };
 
+  /*
+   * Check current inventory before placing
+   * the order.
+   */
+  const validateStock = () => {
+    for (const cartItem of cartItems) {
+      const currentProduct = products.find(
+        (product) =>
+          product.id === cartItem.id
+      );
+
+      if (!currentProduct) {
+        setStockError(
+          `${cartItem.name} is no longer available.`
+        );
+
+        return false;
+      }
+
+      if (
+        currentProduct.stock <
+        cartItem.quantity
+      ) {
+        setStockError(
+          `${cartItem.name} only has ${currentProduct.stock} item${
+            currentProduct.stock === 1
+              ? ""
+              : "s"
+          } left in stock. Please update your cart.`
+        );
+
+        return false;
+      }
+    }
+
+    setStockError("");
+
+    return true;
+  };
+
   const handlePlaceOrder = (event) => {
     event.preventDefault();
 
+    setStockError("");
+
+    /*
+     * Validate customer information first.
+     */
     if (!validateForm()) {
+      return;
+    }
+
+    /*
+     * Validate inventory immediately before
+     * creating the order.
+     */
+    if (!validateStock()) {
       return;
     }
 
@@ -121,24 +197,67 @@ export default function Checkout() {
       return;
     }
 
+    /*
+     * Create order snapshot.
+     */
     const order = {
       id: `ORD-${Date.now()}`,
-      items: cartItems,
+
+      items: cartItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity,
+      })),
+
       subtotal,
       shipping,
       total,
+
       deliveryMethod,
-      customer: formData,
+
+      customer: {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        pinCode: formData.pinCode,
+      },
+
       status: "Confirmed",
+
       createdAt: new Date().toISOString(),
     };
 
-    console.log("Order created:", order);
+    /*
+     * Decrease product inventory.
+     */
+    cartItems.forEach((item) => {
+      dispatch(
+        decreaseStock({
+          id: item.id,
+          quantity: item.quantity,
+        })
+      );
+    });
 
+    /*
+     * Clear cart after inventory has been
+     * successfully validated and reduced.
+     */
     dispatch(clearCart());
 
+    /*
+     * Go to confirmation page.
+     */
     navigate("/order-success", {
-      state: { order },
+      state: {
+        order,
+      },
     });
   };
 
@@ -168,21 +287,43 @@ export default function Checkout() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
           Checkout
         </h1>
 
         <p className="mt-1 text-slate-600 dark:text-slate-400">
-          Complete your details to place your order.
+          Complete your details to place your
+          order.
         </p>
       </div>
+
+      {/* Stock error */}
+      {stockError && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+          <p className="font-semibold">
+            Stock unavailable
+          </p>
+
+          <p className="mt-1 text-sm">
+            {stockError}
+          </p>
+
+          <Link
+            to="/cart"
+            className="mt-2 inline-block text-sm font-semibold underline"
+          >
+            Return to cart
+          </Link>
+        </div>
+      )}
 
       <form
         onSubmit={handlePlaceOrder}
         className="grid grid-cols-1 gap-8 lg:grid-cols-3"
       >
-        {/* Left side */}
+        {/* LEFT */}
         <div className="space-y-8 lg:col-span-2">
           {/* Customer Information */}
           <section className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
@@ -197,7 +338,9 @@ export default function Checkout() {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                error={Boolean(errors.firstName)}
+                error={Boolean(
+                  errors.firstName
+                )}
                 helperText={errors.firstName}
               />
 
@@ -207,7 +350,9 @@ export default function Checkout() {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                error={Boolean(errors.lastName)}
+                error={Boolean(
+                  errors.lastName
+                )}
                 helperText={errors.lastName}
               />
 
@@ -228,7 +373,9 @@ export default function Checkout() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                inputProps={{ maxLength: 10 }}
+                inputProps={{
+                  maxLength: 10,
+                }}
                 error={Boolean(errors.phone)}
                 helperText={errors.phone}
               />
@@ -279,8 +426,12 @@ export default function Checkout() {
                   name="pinCode"
                   value={formData.pinCode}
                   onChange={handleChange}
-                  inputProps={{ maxLength: 6 }}
-                  error={Boolean(errors.pinCode)}
+                  inputProps={{
+                    maxLength: 6,
+                  }}
+                  error={Boolean(
+                    errors.pinCode
+                  )}
                   helperText={errors.pinCode}
                 />
               </div>
@@ -299,7 +450,9 @@ export default function Checkout() {
               <RadioGroup
                 value={deliveryMethod}
                 onChange={(event) =>
-                  setDeliveryMethod(event.target.value)
+                  setDeliveryMethod(
+                    event.target.value
+                  )
                 }
                 className="mt-4"
               >
@@ -311,6 +464,7 @@ export default function Checkout() {
                       <p className="font-medium">
                         Standard Delivery
                       </p>
+
                       <p className="text-sm text-slate-500">
                         3–5 business days · Free
                       </p>
@@ -326,6 +480,7 @@ export default function Checkout() {
                       <p className="font-medium">
                         Express Delivery
                       </p>
+
                       <p className="text-sm text-slate-500">
                         1–2 business days · $99
                       </p>
@@ -337,7 +492,7 @@ export default function Checkout() {
           </section>
         </div>
 
-        {/* Order Summary */}
+        {/* RIGHT */}
         <div>
           <section className="sticky top-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -345,45 +500,64 @@ export default function Checkout() {
             </h2>
 
             <div className="mt-5 space-y-4">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex gap-3"
-                >
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="h-16 w-16 rounded-md object-cover"
-                  />
+              {cartItems.map((item) => {
+                const currentProduct =
+                  products.find(
+                    (product) =>
+                      product.id === item.id
+                  );
 
-                  <div className="flex-1">
+                return (
+                  <div
+                    key={item.id}
+                    className="flex gap-3"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="h-16 w-16 rounded-md object-cover"
+                    />
+
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900 dark:text-white">
+                        {item.name}
+                      </p>
+
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Qty: {item.quantity}
+                      </p>
+
+                      {currentProduct && (
+                        <p className="text-xs text-slate-400">
+                          {currentProduct.stock}{" "}
+                          available
+                        </p>
+                      )}
+                    </div>
+
                     <p className="font-medium text-slate-900 dark:text-white">
-                      {item.name}
-                    </p>
-
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Qty: {item.quantity}
+                      $
+                      {(
+                        item.price *
+                        item.quantity
+                      ).toFixed(2)}
                     </p>
                   </div>
-
-                  <p className="font-medium text-slate-900 dark:text-white">
-                    $
-                    {(item.price * item.quantity).toFixed(
-                      2
-                    )}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="mt-6 space-y-3 border-t border-slate-200 pt-5 dark:border-slate-700">
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>
+                  ${subtotal.toFixed(2)}
+                </span>
               </div>
 
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Shipping</span>
+
                 <span>
                   {shipping === 0
                     ? "Free"
@@ -393,7 +567,10 @@ export default function Checkout() {
 
               <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-bold text-slate-900 dark:border-slate-700 dark:text-white">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+
+                <span>
+                  ${total.toFixed(2)}
+                </span>
               </div>
             </div>
 

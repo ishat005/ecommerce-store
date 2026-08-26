@@ -6,18 +6,24 @@ const initialState = {
 
 const cartSlice = createSlice({
   name: "cart",
+
   initialState,
+
   reducers: {
     addToCart: (state, action) => {
       const product = action.payload;
 
+      // Do not allow products with no inventory.
       if (product.stock <= 0) {
         return;
       }
 
-      const existing = state.items.find((item) => item.id === product.id);
+      const existing = state.items.find(
+        (item) => item.id === product.id
+      );
 
       if (existing) {
+        // Don't allow cart quantity to exceed inventory.
         if (existing.quantity < product.stock) {
           existing.quantity += 1;
         }
@@ -40,7 +46,12 @@ const cartSlice = createSlice({
         (item) => item.id === action.payload
       );
 
-      if (item && item.quantity < item.stock) {
+      if (!item) {
+        return;
+      }
+
+      // Don't allow quantity to exceed available stock.
+      if (item.quantity < item.stock) {
         item.quantity += 1;
       }
     },
