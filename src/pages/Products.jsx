@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useSearchParams } from "react-router-dom";
 
@@ -14,6 +15,7 @@ import {
   FavoriteBorder as FavoriteBorderIcon,
 } from "@mui/icons-material";
 
+import { fetchProducts } from "../features/products/productsSlice";
 import { addToCart } from "../features/cart/cartSlice";
 import {
   addToWishlist,
@@ -21,35 +23,33 @@ import {
 } from "../features/wishlist/wishlistSlice";
 
 export default function Products() {
-  const products = useSelector(
-    (state) => state.products.items
-  );
-
-  const wishlistItems = useSelector(
-    (state) => state.wishlist.items
-  );
-
+  const products = useSelector((state) => state.products.items);
+  const wishlistItems = useSelector((state) => state.wishlist.items);
+  const status = useSelector((state) => state.products.status);
   const dispatch = useDispatch();
 
-  const [searchParams, setSearchParams] =
-    useSearchParams();
+  useEffect(() => {
+    if (status === "idle") {
+      dispatch(fetchProducts());
+    }
+  }, [status, dispatch]);
 
-  const selectedCategory =
-    searchParams.get("category");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCategory = searchParams.get("category");
 
   const filteredProducts = selectedCategory
     ? products.filter(
-        (product) =>
-          product.category === selectedCategory
+        (product) => product.category === selectedCategory
       )
     : products;
 
   const isWishlisted = (id) =>
-    wishlistItems.some((item) => item.id === id);
+    wishlistItems.some((item) => (item._id || item.id) === (id));
 
   const toggleWishlist = (product) => {
-    if (isWishlisted(product.id)) {
-      dispatch(removeFromWishlist(product.id));
+    const productId = product._id || product.id;
+    if (isWishlisted(productId)) {
+      dispatch(removeFromWishlist(productId));
     } else {
       dispatch(addToWishlist(product));
     }
@@ -80,38 +80,33 @@ export default function Products() {
       {/* Products */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filteredProducts.map((product) => {
+          const productId = product._id || product.id;
           const outOfStock = product.stock === 0;
-
-          const lowStock =
-            product.stock > 0 &&
-            product.stock <= 3;
+          const lowStock = product.stock > 0 && product.stock <= 3;
 
           return (
             <Card
-              key={product.id}
+              key={productId}
               className="flex flex-col overflow-hidden"
             >
               {/* Image */}
               <div className="relative">
                 <IconButton
                   aria-label="toggle wishlist"
-                  onClick={() =>
-                    toggleWishlist(product)
-                  }
+                  onClick={() => toggleWishlist(product)}
                   sx={{
                     position: "absolute",
                     top: 8,
                     right: 8,
                     zIndex: 10,
-                    bgcolor:
-                      "rgba(255,255,255,0.9)",
+                    bgcolor: "rgba(255,255,255,0.9)",
                     color: "#334155",
                     "&:hover": {
                       bgcolor: "white",
                     },
                   }}
                 >
-                  {isWishlisted(product.id) ? (
+                  {isWishlisted(productId) ? (
                     <FavoriteIcon
                       className="text-red-500"
                       fontSize="small"
@@ -121,9 +116,7 @@ export default function Products() {
                   )}
                 </IconButton>
 
-                <Link
-                  to={`/products/${product.id}`}
-                >
+                <Link to={`/products/${productId}`}>
                   <CardMedia
                     component="img"
                     image={product.image}
@@ -143,7 +136,7 @@ export default function Products() {
                 </Typography>
 
                 <Link
-                  to={`/products/${product.id}`}
+                  to={`/products/${productId}`}
                   className="block hover:text-indigo-600"
                 >
                   <Typography
@@ -186,13 +179,9 @@ export default function Products() {
                   variant="contained"
                   disableElevation
                   disabled={outOfStock}
-                  onClick={() =>
-                    dispatch(addToCart(product))
-                  }
+                  onClick={() => dispatch(addToCart(product))}
                 >
-                  {outOfStock
-                    ? "Out of stock"
-                    : "Add to cart"}
+                  {outOfStock ? "Out of stock" : "Add to cart"}
                 </Button>
               </CardActions>
             </Card>

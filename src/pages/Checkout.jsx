@@ -139,9 +139,10 @@ export default function Checkout() {
    */
   const validateStock = () => {
     for (const cartItem of cartItems) {
+      const cartItemId = cartItem._id || cartItem.id;
       const currentProduct = products.find(
         (product) =>
-          product.id === cartItem.id
+          (product._id || product.id) === cartItemId
       );
 
       if (!currentProduct) {
@@ -204,7 +205,7 @@ export default function Checkout() {
       id: `ORD-${Date.now()}`,
 
       items: cartItems.map((item) => ({
-        id: item.id,
+        id: item._id || item.id,
         name: item.name,
         price: item.price,
         image: item.image,
@@ -239,7 +240,7 @@ export default function Checkout() {
     cartItems.forEach((item) => {
       dispatch(
         decreaseStock({
-          id: item.id,
+          id: item._id || item.id,
           quantity: item.quantity,
         })
       );
@@ -501,15 +502,16 @@ export default function Checkout() {
 
             <div className="mt-5 space-y-4">
               {cartItems.map((item) => {
+                const cartItemId = item._id || item.id;
                 const currentProduct =
                   products.find(
                     (product) =>
-                      product.id === item.id
+                      (product._id || product.id) === cartItemId
                   );
 
                 return (
                   <div
-                    key={item.id}
+                    key={cartItemId}
                     className="flex gap-3"
                   >
                     <img

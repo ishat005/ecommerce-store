@@ -29,7 +29,7 @@ export default function Wishlist() {
       <div className="mt-6 flex flex-col gap-4">
         {wishlistItems.map((item) => (
           <div
-            key={item.id}
+            key={item._id}
             className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
           >
             <img

@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchProducts } from "../features/products/productsSlice";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
@@ -7,9 +9,17 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 
 export default function Home() {
+  const dispatch = useDispatch();
+  const status = useSelector((state) => state.products.status);
   const products = useSelector((state) => state.products.items);
-  const featured = products.slice(0, 3);
 
+  useEffect(() => {
+    if (status === "idle") {
+      dispatch(fetchProducts());
+    }
+  }, [status, dispatch]);
+
+  const featured = products.slice(0, 3);
   const categories = [...new Set(products.map((p) => p.category))];
 
   return (
@@ -71,7 +81,7 @@ export default function Home() {
 
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {featured.map((product) => (
-            <Link key={product.id} to={`/products/${product.id}`}>
+            <Link key={product._id || product.id} to={`/products/${product._id || product.id}`}>
               <Card className="flex flex-col overflow-hidden">
                 <CardMedia
                   component="img"

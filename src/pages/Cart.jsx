@@ -54,89 +54,93 @@ export default function Cart() {
       </h1>
 
       <div className="mt-6 flex flex-col gap-4">
-        {cartItems.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:items-center"
-          >
-            {/* Image */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="h-20 w-20 rounded-md object-cover"
-            />
+        {cartItems.map((item) => {
+          const itemId = item._id || item.id;
 
-            {/* Product info */}
-            <div className="flex-1">
-              <p className="font-semibold text-slate-900 dark:text-white">
-                {item.name}
-              </p>
-
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                ${item.price.toFixed(2)}
-              </p>
-
-              {/* Inventory information */}
-              {item.stock === 0 ? (
-                <p className="mt-1 text-xs font-medium text-red-600">
-                  Out of stock
-                </p>
-              ) : item.quantity >= item.stock ? (
-                <p className="mt-1 text-xs font-medium text-orange-600">
-                  Maximum available quantity
-                </p>
-              ) : (
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {item.stock} available
-                </p>
-              )}
-            </div>
-
-            {/* Quantity controls */}
-            <div className="flex items-center gap-2">
-              <IconButton
-                size="small"
-                onClick={() =>
-                  dispatch(decrementQuantity(item.id))
-                }
-                disabled={item.quantity <= 1}
-                aria-label="decrease quantity"
-              >
-                <RemoveIcon fontSize="small" />
-              </IconButton>
-
-              <span className="w-6 text-center text-slate-900 dark:text-white">
-                {item.quantity}
-              </span>
-
-              <IconButton
-                size="small"
-                onClick={() =>
-                  dispatch(incrementQuantity(item.id))
-                }
-                disabled={item.quantity >= item.stock}
-                aria-label="increase quantity"
-              >
-                <AddIcon fontSize="small" />
-              </IconButton>
-            </div>
-
-            {/* Item total */}
-            <p className="w-20 text-right font-semibold text-slate-900 dark:text-white">
-              ${(item.price * item.quantity).toFixed(2)}
-            </p>
-
-            {/* Remove */}
-            <IconButton
-              onClick={() =>
-                dispatch(removeFromCart(item.id))
-              }
-              aria-label="remove item"
+          return (
+            <div
+              key={itemId}
+              className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:items-center"
             >
-              <DeleteOutlinedIcon />
-            </IconButton>
-          </div>
-        ))}
+              {/* Image */}
+              <img
+                src={item.image}
+                alt={item.name}
+                className="h-20 w-20 rounded-md object-cover"
+              />
+
+              {/* Product info */}
+              <div className="flex-1">
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  {item.name}
+                </p>
+
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  ${item.price.toFixed(2)}
+                </p>
+
+                {/* Inventory information */}
+                {item.stock === 0 ? (
+                  <p className="mt-1 text-xs font-medium text-red-600">
+                    Out of stock
+                  </p>
+                ) : item.quantity >= item.stock ? (
+                  <p className="mt-1 text-xs font-medium text-orange-600">
+                    Maximum available quantity
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {item.stock} available
+                  </p>
+                )}
+              </div>
+
+              {/* Quantity controls */}
+              <div className="flex items-center gap-2">
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    dispatch(decrementQuantity(itemId))
+                  }
+                  disabled={item.quantity <= 1}
+                  aria-label="decrease quantity"
+                >
+                  <RemoveIcon fontSize="small" />
+                </IconButton>
+
+                <span className="w-6 text-center text-slate-900 dark:text-white">
+                  {item.quantity}
+                </span>
+
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    dispatch(incrementQuantity(itemId))
+                  }
+                  disabled={item.quantity >= item.stock}
+                  aria-label="increase quantity"
+                >
+                  <AddIcon fontSize="small" />
+                </IconButton>
+              </div>
+
+              {/* Item total */}
+              <p className="w-20 text-right font-semibold text-slate-900 dark:text-white">
+                ${(item.price * item.quantity).toFixed(2)}
+              </p>
+
+              {/* Remove */}
+              <IconButton
+                onClick={() =>
+                  dispatch(removeFromCart(itemId))
+                }
+                aria-label="remove item"
+              >
+                <DeleteOutlinedIcon />
+              </IconButton>
+            </div>
+          );
+        })}
       </div>
 
       {/* Cart summary */}

@@ -21,7 +21,7 @@ export default function ProductDetail() {
 
   const product = useSelector((state) =>
     state.products.items.find(
-      (item) => item.id === Number(id)
+      (item) => String(item._id || item.id) === String(id)
     )
   );
 
@@ -29,8 +29,10 @@ export default function ProductDetail() {
     (state) => state.wishlist.items
   );
 
+  const productId = product ? (product._id || product.id) : id;
+
   const isWishlisted = wishlistItems.some(
-    (item) => item.id === Number(id)
+    (item) => String(item._id || item.id) === String(productId)
   );
 
   if (!product) {
@@ -55,7 +57,7 @@ export default function ProductDetail() {
 
   const toggleWishlist = () => {
     if (isWishlisted) {
-      dispatch(removeFromWishlist(product.id));
+      dispatch(removeFromWishlist(productId));
     } else {
       dispatch(addToWishlist(product));
     }
