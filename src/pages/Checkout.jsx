@@ -174,7 +174,7 @@ export default function Checkout() {
     return true;
   };
 
-  const handlePlaceOrder = (event) => {
+  const handlePlaceOrder = async (event) => {
     event.preventDefault();
 
     setStockError("");
@@ -234,32 +234,37 @@ export default function Checkout() {
       createdAt: new Date().toISOString(),
     };
 
-    /*
-     * Decrease product inventory.
-     */
-    cartItems.forEach((item) => {
-      dispatch(
-        decreaseStock({
-          id: item._id || item.id,
-          quantity: item.quantity,
-        })
-      );
-    });
+    try {
+      /*
+       * Decrease product inventory via backend API.
+       */
+      for (const item of cartItems) {
+        await dispatch(
+          decreaseStock({
+            id: item._id || item.id,
+            quantity: item.quantity,
+          })
+        ).unwrap();
+      }
 
-    /*
-     * Clear cart after inventory has been
-     * successfully validated and reduced.
-     */
-    dispatch(clearCart());
+      /*
+       * Clear cart after inventory has been
+       * successfully validated and reduced on the backend.
+       */
+      dispatch(clearCart());
 
-    /*
-     * Go to confirmation page.
-     */
-    navigate("/order-success", {
-      state: {
-        order,
-      },
-    });
+      /*
+       * Go to confirmation page.
+       */
+      navigate("/order-success", {
+        state: {
+          order,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to update stock:", error);
+      setStockError("Failed to process stock update. Please try again.");
+    }
   };
 
   if (cartItems.length === 0) {
