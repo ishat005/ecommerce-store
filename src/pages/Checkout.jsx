@@ -11,22 +11,17 @@ import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 
 import { clearCart } from "../features/cart/cartSlice";
-import { decreaseStock } from "../features/products/productsSlice";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 export default function Checkout() {
-  const cartItems = useSelector(
-    (state) => state.cart.items
-  );
-
-  const products = useSelector(
-    (state) => state.products.items
-  );
+  const cartItems = useSelector((state) => state.cart.items);
+  const products = useSelector((state) => state.products.items);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [deliveryMethod, setDeliveryMethod] =
-    useState("standard");
+  const [deliveryMethod, setDeliveryMethod] = useState("standard");
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -40,20 +35,13 @@ export default function Checkout() {
   });
 
   const [errors, setErrors] = useState({});
-
   const [stockError, setStockError] = useState("");
 
   const subtotal = useMemo(() => {
-    return cartItems.reduce(
-      (sum, item) =>
-        sum + item.price * item.quantity,
-      0
-    );
+    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cartItems]);
 
-  const shipping =
-    deliveryMethod === "express" ? 99 : 0;
-
+  const shipping = deliveryMethod === "express" ? 99 : 0;
   const total = subtotal + shipping;
 
   const handleChange = (event) => {
@@ -74,39 +62,27 @@ export default function Checkout() {
     const newErrors = {};
 
     if (!formData.firstName.trim()) {
-      newErrors.firstName =
-        "First name is required";
+      newErrors.firstName = "First name is required";
     }
 
     if (!formData.lastName.trim()) {
-      newErrors.lastName =
-        "Last name is required";
+      newErrors.lastName = "Last name is required";
     }
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        formData.email
-      )
-    ) {
-      newErrors.email =
-        "Enter a valid email address";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone =
-        "Phone number is required";
-    } else if (
-      !/^[0-9]{10}$/.test(formData.phone)
-    ) {
-      newErrors.phone =
-        "Enter a valid 10-digit phone number";
+      newErrors.phone = "Phone number is required";
+    } else if (!/^[0-9]{10}$/.test(formData.phone)) {
+      newErrors.phone = "Enter a valid 10-digit phone number";
     }
 
     if (!formData.address.trim()) {
-      newErrors.address =
-        "Address is required";
+      newErrors.address = "Address is required";
     }
 
     if (!formData.city.trim()) {
@@ -114,18 +90,13 @@ export default function Checkout() {
     }
 
     if (!formData.state.trim()) {
-      newErrors.state =
-        "State is required";
+      newErrors.state = "State is required";
     }
 
     if (!formData.pinCode.trim()) {
-      newErrors.pinCode =
-        "PIN code is required";
-    } else if (
-      !/^[0-9]{6}$/.test(formData.pinCode)
-    ) {
-      newErrors.pinCode =
-        "Enter a valid 6-digit PIN code";
+      newErrors.pinCode = "PIN code is required";
+    } else if (!/^[0-9]{6}$/.test(formData.pinCode)) {
+      newErrors.pinCode = "Enter a valid 6-digit PIN code";
     }
 
     setErrors(newErrors);
@@ -134,43 +105,31 @@ export default function Checkout() {
   };
 
   /*
-   * Check current inventory before placing
-   * the order.
+   * Check current inventory before placing the order.
    */
   const validateStock = () => {
     for (const cartItem of cartItems) {
       const cartItemId = cartItem._id || cartItem.id;
       const currentProduct = products.find(
-        (product) =>
-          (product._id || product.id) === cartItemId
+        (product) => (product._id || product.id) === cartItemId
       );
 
       if (!currentProduct) {
-        setStockError(
-          `${cartItem.name} is no longer available.`
-        );
-
+        setStockError(`${cartItem.name} is no longer available.`);
         return false;
       }
 
-      if (
-        currentProduct.stock <
-        cartItem.quantity
-      ) {
+      if (currentProduct.stock < cartItem.quantity) {
         setStockError(
           `${cartItem.name} only has ${currentProduct.stock} item${
-            currentProduct.stock === 1
-              ? ""
-              : "s"
+            currentProduct.stock === 1 ? "" : "s"
           } left in stock. Please update your cart.`
         );
-
         return false;
       }
     }
 
     setStockError("");
-
     return true;
   };
 
@@ -179,17 +138,10 @@ export default function Checkout() {
 
     setStockError("");
 
-    /*
-     * Validate customer information first.
-     */
     if (!validateForm()) {
       return;
     }
 
-    /*
-     * Validate inventory immediately before
-     * creating the order.
-     */
     if (!validateStock()) {
       return;
     }
@@ -198,72 +150,39 @@ export default function Checkout() {
       return;
     }
 
-    /*
-     * Create order snapshot.
-     */
-    const order = {
-      id: `ORD-${Date.now()}`,
-
-      items: cartItems.map((item) => ({
-        id: item._id || item.id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        quantity: item.quantity,
-      })),
-
-      subtotal,
-      shipping,
-      total,
-
-      deliveryMethod,
-
-      customer: {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        pinCode: formData.pinCode,
-      },
-
-      status: "Confirmed",
-
-      createdAt: new Date().toISOString(),
-    };
-
     try {
-      /*
-       * Decrease product inventory via backend API.
-       */
-      for (const item of cartItems) {
-        await dispatch(
-          decreaseStock({
-            id: item._id || item.id,
+      const response = await fetch(`${API_URL}/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cartItems.map((item) => ({
+            productId: item._id || item.id,
+            name: item.name,
+            price: item.price,
             quantity: item.quantity,
-          })
-        ).unwrap();
+          })),
+          total,
+          deliveryMethod,
+          customer: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pinCode}`,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStockError(data.message || "Failed to place order. Please try again.");
+        return;
       }
 
-      /*
-       * Clear cart after inventory has been
-       * successfully validated and reduced on the backend.
-       */
       dispatch(clearCart());
-
-      /*
-       * Go to confirmation page.
-       */
-      navigate("/order-success", {
-        state: {
-          order,
-        },
-      });
+      navigate(`/orders/${data._id}`);
     } catch (error) {
-      console.error("Failed to update stock:", error);
-      setStockError("Failed to process stock update. Please try again.");
+      console.error("Failed to place order:", error);
+      setStockError("Something went wrong. Please try again.");
     }
   };
 
@@ -278,13 +197,7 @@ export default function Checkout() {
           Add some products before checking out.
         </p>
 
-        <Button
-          component={Link}
-          to="/products"
-          variant="contained"
-          disableElevation
-          sx={{ mt: 4 }}
-        >
+        <Button component={Link} to="/products" variant="contained" disableElevation sx={{ mt: 4 }}>
           Browse products
         </Button>
       </div>
@@ -293,45 +206,25 @@ export default function Checkout() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-          Checkout
-        </h1>
-
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Checkout</h1>
         <p className="mt-1 text-slate-600 dark:text-slate-400">
-          Complete your details to place your
-          order.
+          Complete your details to place your order.
         </p>
       </div>
 
-      {/* Stock error */}
       {stockError && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-          <p className="font-semibold">
-            Stock unavailable
-          </p>
-
-          <p className="mt-1 text-sm">
-            {stockError}
-          </p>
-
-          <Link
-            to="/cart"
-            className="mt-2 inline-block text-sm font-semibold underline"
-          >
+          <p className="font-semibold">Stock unavailable</p>
+          <p className="mt-1 text-sm">{stockError}</p>
+          <Link to="/cart" className="mt-2 inline-block text-sm font-semibold underline">
             Return to cart
           </Link>
         </div>
       )}
 
-      <form
-        onSubmit={handlePlaceOrder}
-        className="grid grid-cols-1 gap-8 lg:grid-cols-3"
-      >
-        {/* LEFT */}
+      <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          {/* Customer Information */}
           <section className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
               Customer information
@@ -344,9 +237,7 @@ export default function Checkout() {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                error={Boolean(
-                  errors.firstName
-                )}
+                error={Boolean(errors.firstName)}
                 helperText={errors.firstName}
               />
 
@@ -356,9 +247,7 @@ export default function Checkout() {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                error={Boolean(
-                  errors.lastName
-                )}
+                error={Boolean(errors.lastName)}
                 helperText={errors.lastName}
               />
 
@@ -379,16 +268,13 @@ export default function Checkout() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                inputProps={{
-                  maxLength: 10,
-                }}
+                inputProps={{ maxLength: 10 }}
                 error={Boolean(errors.phone)}
                 helperText={errors.phone}
               />
             </div>
           </section>
 
-          {/* Shipping Address */}
           <section className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
               Shipping address
@@ -432,19 +318,14 @@ export default function Checkout() {
                   name="pinCode"
                   value={formData.pinCode}
                   onChange={handleChange}
-                  inputProps={{
-                    maxLength: 6,
-                  }}
-                  error={Boolean(
-                    errors.pinCode
-                  )}
+                  inputProps={{ maxLength: 6 }}
+                  error={Boolean(errors.pinCode)}
                   helperText={errors.pinCode}
                 />
               </div>
             </div>
           </section>
 
-          {/* Delivery */}
           <section className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
             <FormControl>
               <FormLabel>
@@ -455,11 +336,7 @@ export default function Checkout() {
 
               <RadioGroup
                 value={deliveryMethod}
-                onChange={(event) =>
-                  setDeliveryMethod(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setDeliveryMethod(event.target.value)}
                 className="mt-4"
               >
                 <FormControlLabel
@@ -467,13 +344,8 @@ export default function Checkout() {
                   control={<Radio />}
                   label={
                     <div>
-                      <p className="font-medium">
-                        Standard Delivery
-                      </p>
-
-                      <p className="text-sm text-slate-500">
-                        3–5 business days · Free
-                      </p>
+                      <p className="font-medium">Standard Delivery</p>
+                      <p className="text-sm text-slate-500">3–5 business days · Free</p>
                     </div>
                   }
                 />
@@ -483,13 +355,8 @@ export default function Checkout() {
                   control={<Radio />}
                   label={
                     <div>
-                      <p className="font-medium">
-                        Express Delivery
-                      </p>
-
-                      <p className="text-sm text-slate-500">
-                        1–2 business days · $99
-                      </p>
+                      <p className="font-medium">Express Delivery</p>
+                      <p className="text-sm text-slate-500">1–2 business days · $99</p>
                     </div>
                   }
                 />
@@ -498,7 +365,6 @@ export default function Checkout() {
           </section>
         </div>
 
-        {/* RIGHT */}
         <div>
           <section className="sticky top-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -508,17 +374,12 @@ export default function Checkout() {
             <div className="mt-5 space-y-4">
               {cartItems.map((item) => {
                 const cartItemId = item._id || item.id;
-                const currentProduct =
-                  products.find(
-                    (product) =>
-                      (product._id || product.id) === cartItemId
-                  );
+                const currentProduct = products.find(
+                  (product) => (product._id || product.id) === cartItemId
+                );
 
                 return (
-                  <div
-                    key={cartItemId}
-                    className="flex gap-3"
-                  >
+                  <div key={cartItemId} className="flex gap-3">
                     <img
                       src={item.image}
                       alt={item.name}
@@ -526,28 +387,19 @@ export default function Checkout() {
                     />
 
                     <div className="flex-1">
-                      <p className="font-medium text-slate-900 dark:text-white">
-                        {item.name}
-                      </p>
-
+                      <p className="font-medium text-slate-900 dark:text-white">{item.name}</p>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         Qty: {item.quantity}
                       </p>
-
                       {currentProduct && (
                         <p className="text-xs text-slate-400">
-                          {currentProduct.stock}{" "}
-                          available
+                          {currentProduct.stock} available
                         </p>
                       )}
                     </div>
 
                     <p className="font-medium text-slate-900 dark:text-white">
-                      $
-                      {(
-                        item.price *
-                        item.quantity
-                      ).toFixed(2)}
+                      ${(item.price * item.quantity).toFixed(2)}
                     </p>
                   </div>
                 );
@@ -557,48 +409,25 @@ export default function Checkout() {
             <div className="mt-6 space-y-3 border-t border-slate-200 pt-5 dark:border-slate-700">
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Subtotal</span>
-                <span>
-                  ${subtotal.toFixed(2)}
-                </span>
+                <span>${subtotal.toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Shipping</span>
-
-                <span>
-                  {shipping === 0
-                    ? "Free"
-                    : `$${shipping.toFixed(2)}`}
-                </span>
+                <span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
               </div>
 
               <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-bold text-slate-900 dark:border-slate-700 dark:text-white">
                 <span>Total</span>
-
-                <span>
-                  ${total.toFixed(2)}
-                </span>
+                <span>${total.toFixed(2)}</span>
               </div>
             </div>
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disableElevation
-              sx={{ mt: 4 }}
-            >
+            <Button type="submit" fullWidth variant="contained" size="large" disableElevation sx={{ mt: 4 }}>
               Place order
             </Button>
 
-            <Button
-              component={Link}
-              to="/cart"
-              fullWidth
-              variant="text"
-              sx={{ mt: 1 }}
-            >
+            <Button component={Link} to="/cart" fullWidth variant="text" sx={{ mt: 1 }}>
               Back to cart
             </Button>
           </section>

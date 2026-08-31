@@ -19,7 +19,7 @@ export default function AppRoutes() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/order-success" element={<OrderSuccess />} />
+                <Route path="/orders/:orderId" element={<OrderSuccess />} />
             </Route>
         </Routes>
     )

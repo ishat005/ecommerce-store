@@ -4,6 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const productRoutes = require("./routes/productRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
 
@@ -23,6 +24,11 @@ app.get("/", (req, res) => {
  * Product routes
  */
 app.use("/api/products", productRoutes);
+
+/*
+ * Order routes
+ */
+app.use("/api/orders", orderRoutes);
 
 /*
  * MongoDB connection
