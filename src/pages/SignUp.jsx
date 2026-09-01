@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import { registerUser } from "../features/auth/authSlice";
 
 export default function Signup() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const authStatus = useSelector((state) => state.auth.status);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -13,7 +19,6 @@ export default function Signup() {
 
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -56,14 +61,18 @@ export default function Signup() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      // TODO: wire up real signup API call here
-      console.log("Signup submitted:", formData);
-    } catch (error) {
-      setAuthError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    const result = await dispatch(
+      registerUser({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      })
+    );
+
+    if (registerUser.fulfilled.match(result)) {
+      navigate("/");
+    } else {
+      setAuthError(result.payload || "Something went wrong. Please try again.");
     }
   };
 
@@ -140,18 +149,15 @@ export default function Signup() {
               variant="contained"
               disableElevation
               size="large"
-              disabled={isSubmitting}
+              disabled={authStatus === "loading"}
             >
-              {isSubmitting ? "Creating account..." : "Sign up"}
+              {authStatus === "loading" ? "Creating account..." : "Sign up"}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
             Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
-            >
+            <Link to="/login" className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400">
               Log in
             </Link>
           </p>

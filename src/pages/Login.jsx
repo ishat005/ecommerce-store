@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import { loginUser } from "../features/auth/authSlice";
 
 export default function Login() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const authStatus = useSelector((state) => state.auth.status);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -11,7 +17,6 @@ export default function Login() {
 
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -44,14 +49,12 @@ export default function Login() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      // TODO: wire up real login API call here
-      console.log("Login submitted:", formData);
-    } catch (error) {
-      setAuthError("Invalid email or password. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    const result = await dispatch(loginUser(formData));
+
+    if (loginUser.fulfilled.match(result)) {
+      navigate("/");
+    } else {
+      setAuthError(result.payload || "Invalid email or password");
     }
   };
 
@@ -105,18 +108,15 @@ export default function Login() {
               variant="contained"
               disableElevation
               size="large"
-              disabled={isSubmitting}
+              disabled={authStatus === "loading"}
             >
-              {isSubmitting ? "Logging in..." : "Log in"}
+              {authStatus === "loading" ? "Logging in..." : "Log in"}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
             Don't have an account?{" "}
-            <Link
-              to="/signup"
-              className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
-            >
+            <Link to="/signup" className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400">
               Sign up
             </Link>
           </p>
